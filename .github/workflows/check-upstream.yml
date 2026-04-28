@@ -8,11 +8,14 @@ on:
 permissions:
   contents: write
   packages: write
+  actions: write
 
 jobs:
   check:
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    outputs:
+      has_new_commits: ${{ steps.compare.outputs.has_new }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
