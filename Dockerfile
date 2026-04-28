@@ -7,7 +7,10 @@ ARG UPSTREAM_SHA
 ENV PYTHONUNBUFFERED=1
 ENV PLAYWRIGHT_BROWSERS_PATH=/opt/hermes/.playwright
 
-RUN apt-get update && \
+# Cache-friendly apt: preserves .deb packages across rebuilds via cache mount
+RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,target=/var/lib/apt/lists,sharing=locked \
+    apt-get update && \
     apt-get install -y --no-install-recommends \
         build-essential nodejs npm python3 ripgrep ffmpeg gcc python3-dev libffi-dev \
         procps git openssh-client docker-cli tini && \
@@ -23,20 +26,28 @@ WORKDIR /opt/hermes
 # UPSTREAM_SHA busts Docker cache: when a new upstream commit is detected,
 # a different SHA is passed, forcing a re-clone instead of using stale cached layers
 RUN echo "Upstream SHA: ${UPSTREAM_SHA:-unknown}" && \
-    git clone --depth 1 --branch main https://github.com/NousResearch/hermes-agent.git /opt/hermes
+    git clone --depth 1 --single-branch --branch main \
+        https://github.com/NousResearch/hermes-agent.git /opt/hermes
 
-RUN npm install --prefer-offline --no-audit && \
+# --mount=type=cache preserves npm tarball cache across SHA changes
+# npm install still re-runs (layer busted by clone) but downloads hit local cache
+RUN --mount=type=cache,target=/root/.npm \
+    npm install --prefer-offline --no-audit && \
     npx playwright install --with-deps chromium --only-shell && \
     (cd web && npm install --prefer-offline --no-audit) && \
     (cd ui-tui && npm install --prefer-offline --no-audit) && \
     npm cache clean --force
 
-RUN cd web && npm run build && \
-    cd ../ui-tui && npm run build
+# Parallel frontend builds
+RUN (cd web && npm run build) & \
+    (cd ui-tui && npm run build) & \
+    wait
 
 RUN chmod -R a+rX /opt/hermes
 
-RUN uv venv && \
+# --mount=type=cache preserves uv download cache across SHA changes
+RUN --mount=type=cache,target=/root/.cache/uv \
+    uv venv && \
     uv pip install --no-cache-dir -e ".[all]"
 
 COPY --chmod=755 entrypoint.sh /opt/hermes/docker/entrypoint.sh
