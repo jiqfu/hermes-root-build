@@ -36,6 +36,6 @@ jobs:
           push: true
           platforms: linux/amd64
           tags: |
-            ghcr.io/jiqfu/hermes-agent:latest
+            ghcr.io/jiqfu/hermes-root-build:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
