@@ -1,1 +1,59 @@
-RlJPTSBnaGNyLmlvL2FzdHJhbC1zaC91djowLjExLjYtcHl0aG9uMy4xMy10cml4aWUgQVMgdXZfc291cmNlCkZST00gdGlhbm9uL2dvc3U6MS4xOS10cml4aWUgQVMgZ29zdV9zb3VyY2UKRlJPTSBkZWJpYW46MTMuNAoKQVJHIFVQU1RSRUFNX1NIQQoKRU5WIFBZVEhPTlVOQlVGRkVSRUQ9MQpFTlYgUExBWVdSSUdIVF9CUk9XU0VSU19QQVRIPS9vcHQvaGVybWVzLy5wbGF5d3JpZ2h0CgojIENhY2hlLWZyaWVuZGx5IGFwdDogcHJlc2VydmVzIC5kZWIgcGFja2FnZXMgYWNyb3NzIHJlYnVpbGRzIHZpYSBjYWNoZSBtb3VudApSVU4gLS1tb3VudD10eXBlPWNhY2hlLHRhcmdldD0vdmFyL2NhY2hlL2FwdCxzaGFyaW5nPWxvY2tlZCBcCiAgICAtLW1vdW50PXR5cGU9Y2FjaGUsdGFyZ2V0PS92YXIvbGliL2FwdC9saXN0cyxzaGFyaW5nPWxvY2tlZCBcCiAgICBhcHQtZ2V0IHVwZGF0ZSAmJiBcCiAgICBhcHQtZ2V0IGluc3RhbGwgLXkgLS1uby1pbnN0YWxsLXJlY29tbWVuZHMgXAogICAgICAgIGJ1aWxkLWVzc2VudGlhbCBub2RlanMgbnBtIHB5dGhvbjMgcmlwZ3JlcCBmZm1wZWcgZ2NjIHB5dGhvbjMtZGV2IGxpYmZmaS1kZXYgXAogICAgICAgIGN1cmwgd2dldCBwcm9jcHMgZ2l0IG9wZW5zc2gtY2xpZW50IGRvY2tlci1jbGkgdGluaSAmJiBcCiAgICBybSAtcmYgL3Zhci9saWIvYXB0L2xpc3RzLyoKClJVTiB1c2VyYWRkIC11IDEwMDAwIC1tIC1kIC9vcHQvZGF0YSBoZXJtZXMKCkNPUFkgLS1jaG1vZD0wNzU1IC0tZnJvbT1nb3N1X3NvdXJjZSAvZ29zdSAvdXNyL2xvY2FsL2Jpbi8KQ09QWSAtLWNobW9kPTA3NTUgLS1mcm9tPXV2X3NvdXJjZSAvdXNyL2xvY2FsL2Jpbi91diAvdXNyL2xvY2FsL2Jpbi91dnggL3Vzci9sb2NhbC9iaW4vCgpXT1JLRElSIC9vcHQvaGVybWVzCgojIFVQU1RSRUFNX1NIQSBidXN0cyBEb2NrZXIgY2FjaGU6IHdoZW4gYSBuZXcgdXBzdHJlYW0gY29tbWl0IGlzIGRldGVjdGVkLAojIGEgZGlmZmVyZW50IFNIQSBpcyBwYXNzZWQsIGZvcmNpbmcgYSByZS1jbG9uZSBpbnN0ZWFkIG9mIHVzaW5nIHN0YWxlIGNhY2hlZCBsYXllcnMKUlVOIGVjaG8gIlVwc3RyZWFtIFNIQTogJHtVUFNUUkVBTV9TSEE6LXVua25vd259IiAmJiBcCiAgICBnaXQgY2xvbmUgLS1kZXB0aCAxIC0tc2luZ2xlLWJyYW5jaCAtLWJyYW5jaCBtYWluIFwKICAgICAgICBodHRwczovL2dpdGh1Yi5jb20vTm91c1Jlc2VhcmNoL2hlcm1lcy1hZ2VudC5naXQgL29wdC9oZXJtZXMKCiMgLS1tb3VudD10eXBlPWNhY2hlIHByZXNlcnZlcyBucG0gdGFyYmFsbCBjYWNoZSBhY3Jvc3MgU0hBIGNoYW5nZXMKIyBucG0gaW5zdGFsbCBzdGlsbCByZS1ydW5zIChsYXllciBidXN0ZWQgYnkgY2xvbmUpIGJ1dCBkb3dubG9hZHMgaGl0IGxvY2FsIGNhY2hlClJVTiAtLW1vdW50PXR5cGU9Y2FjaGUsdGFyZ2V0PS9yb290Ly5ucG0gXAogICAgbnBtIGluc3RhbGwgLS1wcmVmZXItb2ZmbGluZSAtLW5vLWF1ZGl0ICYmIFwKICAgIG5weCBwbGF5d3JpZ2h0IGluc3RhbGwgLS13aXRoLWRlcHMgY2hyb21pdW0gLS1vbmx5LXNoZWxsICYmIFwKICAgIChjZCB3ZWIgJiYgbnBtIGluc3RhbGwgLS1wcmVmZXItb2ZmbGluZSAtLW5vLWF1ZGl0KSAmJiBcCiAgICAoY2QgdWktdHVpICYmIG5wbSBpbnN0YWxsIC0tcHJlZmVyLW9mZmxpbmUgLS1uby1hdWRpdCkgJiYgXAogICAgbnBtIGNhY2hlIGNsZWFuIC0tZm9yY2UKCiMgUGFyYWxsZWwgZnJvbnRlbmQgYnVpbGRzClJVTiAoY2Qgd2ViICYmIG5wbSBydW4gYnVpbGQpICYgXAogICAgKGNkIHVpLXR1aSAmJiBucG0gcnVuIGJ1aWxkKSAmIFwKICAgIHdhaXQKClJVTiBjaG1vZCAtUiBhK3JYIC9vcHQvaGVybWVzCgojIC0tbW91bnQ9dHlwZT1jYWNoZSBwcmVzZXJ2ZXMgdXYgZG93bmxvYWQgY2FjaGUgYWNyb3NzIFNIQSBjaGFuZ2VzClJVTiAtLW1vdW50PXR5cGU9Y2FjaGUsdGFyZ2V0PS9yb290Ly5jYWNoZS91diBcCiAgICB1diB2ZW52ICYmIFwKICAgIHV2IHBpcCBpbnN0YWxsIC0tbm8tY2FjaGUtZGlyIC1lICIuW2FsbF0iCgpDT1BZIC0tY2htb2Q9NzU1IGVudHJ5cG9pbnQuc2ggL29wdC9oZXJtZXMvZG9ja2VyL2VudHJ5cG9pbnQuc2gKCkVOViBIRVJNRVNfV0VCX0RJU1Q9L29wdC9oZXJtZXMvaGVybWVzX2NsaS93ZWJfZGlzdApFTlYgSEVSTUVTX0hPTUU9L29wdC9kYXRhCkVOViBQQVRIPSIvb3B0L2RhdGEvLmxvY2FsL2Jpbjoke1BBVEh9IgpWT0xVTUUgWyAiL29wdC9kYXRhIiBdCkVOVFJZUE9JTlQgWyAiL3Vzci9iaW4vdGluaSIsICItZyIsICItLSIsICIvb3B0L2hlcm1lcy9kb2NrZXIvZW50cnlwb2ludC5zaCIgXQo=
+FROM ghcr.io/astral-sh/uv:0.11.6-python3.13-trixie AS uv_source
+FROM tianon/gosu:1.19-trixie AS gosu_source
+FROM debian:13.4
+
+ARG UPSTREAM_SHA
+
+ENV PYTHONUNBUFFERED=1
+ENV PLAYWRIGHT_BROWSERS_PATH=/opt/hermes/.playwright
+
+# Cache-friendly apt: preserves .deb packages across rebuilds via cache mount
+RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,target=/var/lib/apt/lists,sharing=locked \
+    apt-get update && \
+    apt-get install -y --no-install-recommends \
+        build-essential nodejs npm python3 ripgrep ffmpeg gcc python3-dev libffi-dev \
+        curl wget procps git openssh-client docker-cli tini && \
+    rm -rf /var/lib/apt/lists/*
+
+RUN useradd -u 10000 -m -d /opt/data hermes
+
+COPY --chmod=0755 --from=gosu_source /gosu /usr/local/bin/
+COPY --chmod=0755 --from=uv_source /usr/local/bin/uv /usr/local/bin/uvx /usr/local/bin/
+
+WORKDIR /opt/hermes
+
+# UPSTREAM_SHA busts Docker cache: when a new upstream commit is detected,
+# a different SHA is passed, forcing a re-clone instead of using stale cached layers
+RUN echo "Upstream SHA: ${UPSTREAM_SHA:-unknown}" && \
+    git clone --depth 1 --single-branch --branch main \
+        https://github.com/NousResearch/hermes-agent.git /opt/hermes
+
+# --mount=type=cache preserves npm tarball cache across SHA changes
+# npm install still re-runs (layer busted by clone) but downloads hit local cache
+RUN --mount=type=cache,target=/root/.npm \
+    npm install --prefer-offline --no-audit && \
+    npx playwright install --with-deps chromium --only-shell && \
+    (cd web && npm install --prefer-offline --no-audit) && \
+    (cd ui-tui && npm install --prefer-offline --no-audit) && \
+    npm cache clean --force
+
+# Parallel frontend builds
+RUN (cd web && npm run build) & \
+    (cd ui-tui && npm run build) & \
+    wait
+
+RUN chmod -R a+rX /opt/hermes
+
+# --mount=type=cache preserves uv download cache across SHA changes
+RUN --mount=type=cache,target=/root/.cache/uv \
+    uv venv && \
+    uv pip install --no-cache-dir -e ".[all]"
+
+COPY --chmod=755 entrypoint.sh /opt/hermes/docker/entrypoint.sh
+
+ENV HERMES_WEB_DIST=/opt/hermes/hermes_cli/web_dist
+ENV HERMES_HOME=/opt/data
+ENV PATH="/opt/data/.local/bin:${PATH}"
+VOLUME [ "/opt/data" ]
+ENTRYPOINT [ "/usr/bin/tini", "-g", "--", "/opt/hermes/docker/entrypoint.sh" ]
