@@ -106,3 +106,29 @@ jobs:
             UPSTREAM_SHA=${{ needs.check.outputs.upstream_sha }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+      - name: Cleanup old daily tags (keep last 30 days)
+        shell: bash
+        run: |
+          CUTOFF=$(date -u -d '30 days ago' +%s)
+          echo "Cleaning up YYYYMMDD tags older than $(date -u -d @$CUTOFF '+%Y-%m-%d')"
+          gh api "/user/packages/container/hermes-root-build/versions?per_page=100" \
+            --jq '.[] | {id: .id, tags: .metadata.container.tags, created: .created_at}' \
+            | jq -c '.' | while read -r ver; do
+              CREATED=$(echo "$ver" | jq -r '.created')
+              CREATED_TS=$(date -u -d "$CREATED" +%s)
+              if [ "$CREATED_TS" -lt "$CUTOFF" ]; then
+                TAGS=$(echo "$ver" | jq -r '.tags[]' 2>/dev/null)
+                for tag in $TAGS; do
+                  if [[ "$tag" =~ ^[0-9]{8}$ ]]; then
+                    ID=$(echo "$ver" | jq -r '.id')
+                    echo "  Delete: id=$ID tags=$(echo "$ver" | jq -rc '.tags') created=$CREATED"
+                    gh api -X DELETE "/user/packages/container/hermes-root-build/versions/$ID" --silent
+                    break
+                  fi
+                done
+              fi
+            done
+          echo "Cleanup done"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
