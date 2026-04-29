@@ -17,6 +17,9 @@ jobs:
     outputs:
       upstream_sha: ${{ steps.upstream.outputs.sha }}
       has_new: ${{ steps.compare.outputs.has_new }}
+      upstream_tag: ${{ steps.upstream_tag.outputs.tag }}
+      upstream_tag_sha: ${{ steps.upstream_tag.outputs.sha }}
+      has_new_tag: ${{ steps.compare_tag.outputs.has_new_tag }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -59,6 +62,44 @@ jobs:
             echo "No new commits"
           fi
 
+      - name: Get upstream latest tag
+        id: upstream_tag
+        run: |
+          TAG_INFO=$(curl -sL \
+            -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+            -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/repos/NousResearch/hermes-agent/tags?per_page=1")
+          LATEST_TAG=$(echo "$TAG_INFO" | jq -r '.[0].name // empty')
+          TAG_SHA=$(echo "$TAG_INFO" | jq -r '.[0].commit.sha // empty')
+          echo "tag=$LATEST_TAG" >> "$GITHUB_OUTPUT"
+          echo "sha=$TAG_SHA" >> "$GITHUB_OUTPUT"
+          echo "Latest upstream tag: $LATEST_TAG (sha: $TAG_SHA)"
+
+      - name: Get last known tag
+        id: cached_tag
+        run: |
+          if [ -f .upstream-tag ]; then
+            LAST_TAG=$(cat .upstream-tag)
+            echo "tag=$LAST_TAG" >> "$GITHUB_OUTPUT"
+            echo "Last known tag: $LAST_TAG"
+          else
+            echo "tag=" >> "$GITHUB_OUTPUT"
+            echo "No cached tag found"
+          fi
+
+      - name: Compare tag
+        id: compare_tag
+        run: |
+          if [ -n "${{ steps.upstream_tag.outputs.tag }}" ] && \
+             [ "${{ steps.upstream_tag.outputs.tag }}" != "${{ steps.cached_tag.outputs.tag }}" ]; then
+            echo "has_new_tag=true" >> "$GITHUB_OUTPUT"
+            echo "${{ steps.upstream_tag.outputs.tag }}" > .upstream-tag
+            echo "New tag detected: ${{ steps.upstream_tag.outputs.tag }}"
+          else
+            echo "has_new_tag=false" >> "$GITHUB_OUTPUT"
+            echo "No new tags"
+          fi
+
       - name: Commit updated SHA
         if: steps.compare.outputs.has_new == 'true'
         run: |
@@ -68,9 +109,18 @@ jobs:
           git commit -m "chore: update upstream SHA to ${{ steps.upstream.outputs.sha }}"
           git push
 
+      - name: Commit updated tag
+        if: steps.compare_tag.outputs.has_new_tag == 'true'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add .upstream-tag
+          git commit -m "chore: update upstream tag to ${{ steps.upstream_tag.outputs.tag }}"
+          git push
+
   build:
     needs: check
-    if: needs.check.outputs.has_new == 'true'
+    if: needs.check.outputs.has_new == 'true' || needs.check.outputs.has_new_tag == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 90
     steps:
@@ -80,10 +130,19 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Generate version tag
-        id: version
+      - name: Generate version tags
+        id: tags
         run: |
-          echo "date=$(date -u +%Y%m%d)" >> "$GITHUB_OUTPUT"
+          {
+            echo "ghcr.io/jiqfu/hermes-root-build:latest"
+            echo "ghcr.io/jiqfu/hermes-root-build:$(date -u +%Y%m%d)"
+            if [ -n "${{ needs.check.outputs.upstream_tag }}" ]; then
+              echo "ghcr.io/jiqfu/hermes-root-build:${{ needs.check.outputs.upstream_tag }}"
+            fi
+          } > /tmp/tags.txt
+          echo "list<<EOF" >> "$GITHUB_OUTPUT"
+          cat /tmp/tags.txt >> "$GITHUB_OUTPUT"
+          echo "EOF" >> "$GITHUB_OUTPUT"
 
       - name: Log in to GitHub Container Registry
         uses: docker/login-action@v3
@@ -99,11 +158,9 @@ jobs:
           file: Dockerfile
           push: true
           platforms: linux/amd64
-          tags: |
-            ghcr.io/jiqfu/hermes-root-build:latest
-            ghcr.io/jiqfu/hermes-root-build:${{ steps.version.outputs.date }}
+          tags: ${{ steps.tags.outputs.list }}
           build-args: |
-            UPSTREAM_SHA=${{ needs.check.outputs.upstream_sha }}
+            UPSTREAM_SHA=${{ needs.check.outputs.upstream_tag_sha || needs.check.outputs.upstream_sha }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
