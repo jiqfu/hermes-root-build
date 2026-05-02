@@ -25,9 +25,12 @@ WORKDIR /opt/hermes
 
 # UPSTREAM_SHA busts Docker cache: when a new upstream commit is detected,
 # a different SHA is passed, forcing a re-clone instead of using stale cached layers
+COPY patches/qqbot-resume-death-loop.patch /tmp/
 RUN echo "Upstream SHA: ${UPSTREAM_SHA:-unknown}" && \
     git clone --depth 1 --single-branch --branch main \
-        https://github.com/NousResearch/hermes-agent.git /opt/hermes
+        https://github.com/NousResearch/hermes-agent.git /opt/hermes && \
+    patch -p1 < /tmp/qqbot-resume-death-loop.patch && \
+    rm /tmp/qqbot-resume-death-loop.patch
 
 # --mount=type=cache preserves npm tarball cache across SHA changes
 # npm install still re-runs (layer busted by clone) but downloads hit local cache
