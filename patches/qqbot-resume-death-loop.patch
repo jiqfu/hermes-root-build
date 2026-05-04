@@ -3,16 +3,7 @@ Date: Thu, 30 Apr 2026 20:40:03 +0800
 Subject: [PATCH] fix(qqbot): prevent Resume death-loop and zombie state
 
 Combines PR #17990 (window tracking + quick disconnect + backoff cap)
-and PR #19414 (zombie state notification + reconnect hardening).
-
-Changes:
-1. _exc_disconnect_count window tracking (5/300s -> force Identify)
-2. Quick disconnect detection in Exception branch
-3. _set_fatal_error() on ALL 3 exit paths (4008, QQCloseError, Exception)
-   -> prevents zombie state where process lives but doesn't respond
-4. CLOSED/ERROR -> QQCloseError (preserve close codes)
-5. 15s cooldown on reconnect failure
-6. Heartbeat interval only reset after successful connection
+and PR #19414 (zombie state prevention + reconnect hardening).
 
 gateway/platforms/qqbot/adapter.py | 75 insertions(+), 5 deletions(-)
 
@@ -118,7 +109,7 @@ index c6e5d42..70832e9 100644
                      return
  
                  if await self._reconnect(backoff_idx):
-@@ -571,16 +633,20 @@ class QQAdapter(BasePlatformAdapter):
+@@ -571,16 +633,18 @@ class QQAdapter(BasePlatformAdapter):
          )
          await asyncio.sleep(delay)
  
@@ -138,7 +129,7 @@ index c6e5d42..70832e9 100644
              return False
  
      async def _read_events(self) -> None:
-@@ -600,7 +666,8 @@ class QQAdapter(BasePlatformAdapter):
+@@ -600,7 +670,8 @@ class QQAdapter(BasePlatformAdapter):
              elif msg.type == aiohttp.WSMsgType.CLOSE:
                  raise QQCloseError(msg.data, msg.extra)
              elif msg.type in (aiohttp.WSMsgType.CLOSED, aiohttp.WSMsgType.ERROR):
