@@ -1,33 +1,19 @@
-From b1ed920bfd399849fa53d9853b7f64ea8d6315bd Mon Sep 17 00:00:00 2001
+From 683d50e45dfe537f45ef62fad7172b117dea60c4 Mon Sep 17 00:00:00 2001
 From: Yunkai Zhang <yunkai.me@gmail.com>
 Date: Thu, 30 Apr 2026 20:40:03 +0800
-Subject: [PATCH] fix(qqbot): prevent Resume death-loop on Exception-disconnect
- path
-MIME-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-Content-Transfer-Encoding: 8bit
+Subject: [PATCH] fix(qqbot): prevent Resume death-loop and zombie state on
+ disconnect
 
-The Exception handler (no close code) was missing:
-1. Window-based disconnect counting — 5+ disconnects in 300s forces
-   a fresh Identify instead of Resume, breaking the 60s idle-timeout
-   death-loop on QQ's TCP frontend.
-2. Quick-disconnect detection (mirrors QQCloseError branch).
-3. Backoff with MAX_RECONNECT_ATTEMPTS upper bound — previously
-   backoff_idx was reset to 0 on every successful reconnect,
-   making it impossible to ever give up.
+Combines fixes from PR #17990 (Resume death-loop via exception-disconnect
+window tracking) and PR #19414 (zombie state prevention after reconnect
+exhaustion).
 
-Root cause: QQ's TCP-layer idle timeout (~60s) is not reset by
-WebSocket heartbeat frames on the load-balancer tier, so Resume
-sessions with no message traffic enter an infinite reconnect cycle.
----
- gateway/platforms/qqbot/adapter.py | 53 ++++++++++++++++++++++++++++++
- 1 file changed, 53 insertions(+)
+gateway/platforms/qqbot/adapter.py | 75 insertions(+), 8 deletions(-)
 
 diff --git a/gateway/platforms/qqbot/adapter.py b/gateway/platforms/qqbot/adapter.py
-index 10e1f62e72c..56e996961c0 100644
 --- a/gateway/platforms/qqbot/adapter.py
 +++ b/gateway/platforms/qqbot/adapter.py
-@@ -191,6 +191,10 @@ def __init__(self, config: PlatformConfig):
+@@ -191,6 +191,10 @@
          self._last_seq: Optional[int] = None
          self._chat_type_map: Dict[str, str] = {}  # chat_id → "c2c"|"group"|"guild"|"dm"
  
@@ -38,7 +24,30 @@ index 10e1f62e72c..56e996961c0 100644
          # Request/response correlation
          self._pending_responses: Dict[str, asyncio.Future] = {}
          self._seen_messages: Dict[str, float] = {}
-@@ -546,6 +550,55 @@ async def _listen_loop(self) -> None:
+@@ -488,7 +492,14 @@
+                     if backoff_idx >= MAX_RECONNECT_ATTEMPTS:
++                        self._set_fatal_error(
++                            "qq_reconnect_exhausted",
++                            "Max reconnect attempts reached after repeated rate limits",
++                            retryable=True,
++                        )
+                         return
+                     await asyncio.sleep(RATE_LIMIT_DELAY)
+                     if await self._reconnect(backoff_idx):
+@@ -539,7 +550,15 @@
+                     if backoff_idx >= MAX_RECONNECT_ATTEMPTS:
+                         logger.error("[%s] Max reconnect attempts reached (QQCloseError)", self._log_tag)
++                        self._set_fatal_error(
++                            "qq_reconnect_exhausted",
++                            "Max reconnect attempts reached after repeated WebSocket close errors",
++                            retryable=True,
++                        )
+                         return
+ 
+             except Exception as exc:
+                 if not self._running:
+                     return
+@@ -546,6 +565,61 @@
                  self._mark_disconnected()
                  self._fail_pending("Connection interrupted")
  
@@ -93,4 +102,41 @@ index 10e1f62e72c..56e996961c0 100644
 +                # --- Backoff with upper bound ---
                  if backoff_idx >= MAX_RECONNECT_ATTEMPTS:
                      logger.error("[%s] Max reconnect attempts reached", self._log_tag)
++                    self._set_fatal_error(
++                        "qq_reconnect_exhausted",
++                        "Max reconnect attempts reached after repeated WebSocket errors",
++                        retryable=True,
++                    )
                      return
+ 
+                 if await self._reconnect(backoff_idx):
+@@ -571,16 +645,20 @@
+         )
+         await asyncio.sleep(delay)
+ 
+-        self._heartbeat_interval = 30.0  # reset until Hello
+         try:
+             await self._ensure_token()
+             gateway_url = await self._get_gateway_url()
+             await self._open_ws(gateway_url)
++            self._heartbeat_interval = 30.0  # reset after successful connection
+             self._mark_connected()
+             logger.info("[%s] Reconnected", self._log_tag)
+             return True
+         except Exception as exc:
+             logger.warning("[%s] Reconnect failed: %s", self._log_tag, exc)
++            # Give the server time to clean up the old session before next attempt
++            await asyncio.sleep(15)
+             return False
+ 
+     async def _read_events(self) -> None:
+@@ -600,7 +678,8 @@
+             elif msg.type == aiohttp.WSMsgType.CLOSE:
+                 raise QQCloseError(msg.data, msg.extra)
+             elif msg.type in (aiohttp.WSMsgType.CLOSED, aiohttp.WSMsgType.ERROR):
+-                raise RuntimeError("WebSocket closed")
++                # Preserve close code/reason for proper error classification
++                raise QQCloseError(msg.data, msg.extra)
+ 
+     async def _heartbeat_loop(self) -> None:
+         """Send periodic heartbeats (QQ Gateway expects op 1 heartbeat with latest seq).
