@@ -1,6 +1,5 @@
-
 diff --git a/gateway/platforms/qqbot/adapter.py b/gateway/platforms/qqbot/adapter.py
-index c6e5d42..70832e9 100644
+index 28a2979..cd2db73 100644
 --- a/gateway/platforms/qqbot/adapter.py
 +++ b/gateway/platforms/qqbot/adapter.py
 @@ -191,6 +191,10 @@ class QQAdapter(BasePlatformAdapter):
@@ -14,7 +13,23 @@ index c6e5d42..70832e9 100644
          # Request/response correlation
          self._pending_responses: Dict[str, asyncio.Future] = {}
          self._seen_messages: Dict[str, float] = {}
-@@ -488,6 +492,11 @@ class QQAdapter(BasePlatformAdapter):
+@@ -458,6 +462,7 @@ class QQAdapter(BasePlatformAdapter):
+                             "Too many quick disconnects — check bot permissions",
+                             retryable=True,
+                         )
++                        await self._notify_fatal_error()
+                         return
+                 else:
+                     quick_disconnect_count = 0
+@@ -474,6 +479,7 @@ class QQAdapter(BasePlatformAdapter):
+                     self._set_fatal_error(
+                         f"qq_{desc}", f"Bot is {desc}", retryable=False
+                     )
++                    await self._notify_fatal_error()
+                     return
+ 
+                 # Rate limited
+@@ -484,6 +490,12 @@ class QQAdapter(BasePlatformAdapter):
                          RATE_LIMIT_DELAY,
                      )
                      if backoff_idx >= MAX_RECONNECT_ATTEMPTS:
@@ -23,10 +38,11 @@ index c6e5d42..70832e9 100644
 +                            "Max reconnect attempts reached after repeated rate limits",
 +                            retryable=True,
 +                        )
++                        await self._notify_fatal_error()
                          return
                      await asyncio.sleep(RATE_LIMIT_DELAY)
                      if await self._reconnect(backoff_idx):
-@@ -541,6 +550,11 @@ class QQAdapter(BasePlatformAdapter):
+@@ -537,6 +549,12 @@ class QQAdapter(BasePlatformAdapter):
                      backoff_idx += 1
                      if backoff_idx >= MAX_RECONNECT_ATTEMPTS:
                          logger.error("[%s] Max reconnect attempts reached (QQCloseError)", self._log_tag)
@@ -35,10 +51,11 @@ index c6e5d42..70832e9 100644
 +                            "Max reconnect attempts reached after repeated WebSocket close errors",
 +                            retryable=True,
 +                        )
++                        await self._notify_fatal_error()
                          return
  
              except Exception as exc:
-@@ -550,8 +564,62 @@ class QQAdapter(BasePlatformAdapter):
+@@ -546,8 +564,64 @@ class QQAdapter(BasePlatformAdapter):
                  self._mark_disconnected()
                  self._fail_pending("Connection interrupted")
  
@@ -86,6 +103,7 @@ index c6e5d42..70832e9 100644
 +                            "Too many quick disconnects — check bot permissions",
 +                            retryable=True,
 +                        )
++                        await self._notify_fatal_error()
 +                        return
 +                else:
 +                    quick_disconnect_count = 0
@@ -98,10 +116,11 @@ index c6e5d42..70832e9 100644
 +                        "Max reconnect attempts reached after repeated WebSocket errors",
 +                        retryable=True,
 +                    )
++                    await self._notify_fatal_error()
                      return
  
                  if await self._reconnect(backoff_idx):
-@@ -571,16 +639,18 @@ class QQAdapter(BasePlatformAdapter):
+@@ -567,16 +641,18 @@ class QQAdapter(BasePlatformAdapter):
          )
          await asyncio.sleep(delay)
  
@@ -121,7 +140,7 @@ index c6e5d42..70832e9 100644
              return False
  
      async def _read_events(self) -> None:
-@@ -600,7 +670,8 @@ class QQAdapter(BasePlatformAdapter):
+@@ -596,7 +672,8 @@ class QQAdapter(BasePlatformAdapter):
              elif msg.type == aiohttp.WSMsgType.CLOSE:
                  raise QQCloseError(msg.data, msg.extra)
              elif msg.type in (aiohttp.WSMsgType.CLOSED, aiohttp.WSMsgType.ERROR):
