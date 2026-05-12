@@ -45,12 +45,14 @@ RUN (cd web && npm run build) & \
 
 RUN chmod -R a+rX /opt/hermes
 
-# Install extras needed by hermes-miao (gateway-focused).
-# [all] pulls in [mistral] which is currently broken on PyPI (mistralai unreachable).
-# Skip it — hermes-miao doesn't use Mistral provider.
+# Use uv sync --frozen (matching upstream approach) so dependency versions
+# are resolved from the pinned uv.lock file shipped with the source.
+# uv pip install -e ".[all]" does fresh resolution and can fail when
+# packages like mistralai become temporarily unreachable on PyPI;
+# uv sync --frozen uses lock file entries which were valid at lock time.
 RUN --mount=type=cache,target=/root/.cache/uv \
-    uv venv && \
-    uv pip install --no-cache-dir -e ".[messaging,web,cron,cli,pty,mcp,acp,slack,homeassistant,sms,google,tts-premium,honcho,youtube,dev,bedrock,dingtalk,feishu]"
+    uv sync --frozen --no-install-project --extra all && \
+    uv pip install --no-cache-dir --no-deps -e "."
 
 COPY --chmod=755 entrypoint.sh /opt/hermes/docker/entrypoint.sh
 
