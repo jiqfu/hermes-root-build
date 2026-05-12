@@ -45,10 +45,12 @@ RUN (cd web && npm run build) & \
 
 RUN chmod -R a+rX /opt/hermes
 
-# --mount=type=cache preserves uv download cache across SHA changes
+# Install extras needed by hermes-miao (gateway-focused).
+# [all] pulls in [mistral] which is currently broken on PyPI (mistralai unreachable).
+# Skip it — hermes-miao doesn't use Mistral provider.
 RUN --mount=type=cache,target=/root/.cache/uv \
     uv venv && \
-    uv pip install --no-cache-dir -e ".[all]"
+    uv pip install --no-cache-dir -e ".[messaging,web,cron,cli,pty,mcp,acp,slack,homeassistant,sms,google,tts-premium,honcho,youtube,dev,bedrock,dingtalk,feishu]"
 
 COPY --chmod=755 entrypoint.sh /opt/hermes/docker/entrypoint.sh
 
