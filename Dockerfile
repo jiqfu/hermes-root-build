@@ -7,13 +7,14 @@ ARG UPSTREAM_SHA
 ENV PYTHONUNBUFFERED=1
 ENV PLAYWRIGHT_BROWSERS_PATH=/opt/hermes/.playwright
 
-# Cache-friendly apt: preserves .deb packages across rebuilds via cache mount
+# System deps
 RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     --mount=type=cache,target=/var/lib/apt/lists,sharing=locked \
     apt-get update && \
     apt-get install -y --no-install-recommends \
-        build-essential nodejs npm python3 ripgrep ffmpeg gcc python3-dev libffi-dev \
-        curl wget procps git openssh-client docker-cli tini && \
+        ca-certificates curl python3 ripgrep ffmpeg gcc g++ make cmake \
+        python3-dev python3-venv libffi-dev procps git openssh-client \
+        docker-cli tini && \
     rm -rf /var/lib/apt/lists/*
 
 RUN useradd -u 10000 -m -d /opt/data hermes
@@ -21,31 +22,37 @@ RUN useradd -u 10000 -m -d /opt/data hermes
 COPY --chmod=0755 --from=gosu_source /gosu /usr/local/bin/
 COPY --chmod=0755 --from=uv_source /usr/local/bin/uv /usr/local/bin/uvx /usr/local/bin/
 
-WORKDIR /opt/hermes
-
-# UPSTREAM_SHA busts Docker cache — write SHA to file so cache key tracks the value
+# ── Clone upstream (cache-busted by UPSTREAM_SHA) ──
+# Delete apps/desktop so @playwright/test is not installed via workspace,
+# matching official behavior where npx playwright downloads it on demand
 RUN echo "${UPSTREAM_SHA:-unknown}" > /tmp/upstream-sha && \
     cd /tmp && rm -rf /opt/hermes && \
     git clone --depth 1 --single-branch --branch main \
-        https://github.com/NousResearch/hermes-agent.git /opt/hermes
+        https://github.com/NousResearch/hermes-agent.git /opt/hermes && \
+    rm -rf /opt/hermes/apps/desktop
 
-# Official upstream pattern: npm install + playwright + cache clean in one layer
+WORKDIR /opt/hermes
+
+# ── npm install + Playwright browsers ──
+ENV npm_config_install_links=false
 RUN --mount=type=cache,target=/root/.npm \
     npm install --prefer-offline --no-audit && \
-    npx @playwright/test install --with-deps chromium --only-shell && \
+    npx playwright install --with-deps chromium --only-shell && \
     npm cache clean --force
 
-# Parallel frontend builds
-RUN (cd web && npm run build) & \
-    (cd ui-tui && npm run build) & \
-    wait
-
-RUN chmod -R a+rX /opt/hermes
-
+# ── Python deps ──
+RUN touch ./README.md
 RUN --mount=type=cache,target=/root/.cache/uv \
-    uv sync --frozen --no-install-project --extra all && \
-    uv pip install --no-cache-dir --no-deps -e "."
+    uv sync --frozen --no-install-project --extra all
 
+# ── Frontend builds ──
+RUN cd web && npm run build && \
+    cd ../ui-tui && npm run build
+
+# ── Install Hermes itself ──
+RUN uv pip install --no-cache-dir --no-deps -e "."
+
+# ── Runtime config ──
 COPY --chmod=755 entrypoint.sh /opt/hermes/docker/entrypoint.sh
 
 ENV HERMES_WEB_DIST=/opt/hermes/hermes_cli/web_dist
