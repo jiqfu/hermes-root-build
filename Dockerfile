@@ -14,7 +14,7 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     apt-get install -y --no-install-recommends \
         ca-certificates curl python3 ripgrep ffmpeg gcc g++ make cmake \
         python3-dev python3-venv libffi-dev procps git openssh-client \
-        docker-cli tini && \
+        docker-cli tini nodejs npm && \
     rm -rf /var/lib/apt/lists/*
 
 RUN useradd -u 10000 -m -d /opt/data hermes
