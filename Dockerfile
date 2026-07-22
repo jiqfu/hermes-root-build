@@ -23,24 +23,16 @@ COPY --chmod=0755 --from=uv_source /usr/local/bin/uv /usr/local/bin/uvx /usr/loc
 
 WORKDIR /opt/hermes
 
-# UPSTREAM_SHA busts Docker cache: when a new upstream commit is detected,
-# a different SHA is passed, forcing a re-clone instead of using stale cached layers
-# Writing SHA to a file ensures Docker cache key includes the actual value
+# UPSTREAM_SHA busts Docker cache — write SHA to file so cache key tracks the value
 RUN echo "${UPSTREAM_SHA:-unknown}" > /tmp/upstream-sha && \
     cd /tmp && rm -rf /opt/hermes && \
     git clone --depth 1 --single-branch --branch main \
         https://github.com/NousResearch/hermes-agent.git /opt/hermes
 
-# Verify toolchain + install root workspace deps
+# Official upstream pattern: npm install + playwright + cache clean in one layer
 RUN --mount=type=cache,target=/root/.npm \
-    node --version && npm --version && npx --version && \
-    npm install --prefer-offline --no-audit
-
-# Install Playwright browser shell (for browser tool support)
-RUN --mount=type=cache,target=/root/.npm \
-    npm install --no-save playwright && \
+    npm install --prefer-offline --no-audit && \
     npx playwright install --with-deps chromium --only-shell && \
-    npm uninstall --no-save playwright && \
     npm cache clean --force
 
 # Parallel frontend builds
@@ -50,11 +42,6 @@ RUN (cd web && npm run build) & \
 
 RUN chmod -R a+rX /opt/hermes
 
-# Use uv sync --frozen (matching upstream approach) so dependency versions
-# are resolved from the pinned uv.lock file shipped with the source.
-# uv pip install -e ".[all]" does fresh resolution and can fail when
-# packages like mistralai become temporarily unreachable on PyPI;
-# uv sync --frozen uses lock file entries which were valid at lock time.
 RUN --mount=type=cache,target=/root/.cache/uv \
     uv sync --frozen --no-install-project --extra all && \
     uv pip install --no-cache-dir --no-deps -e "."
