@@ -27,7 +27,7 @@ WORKDIR /opt/hermes
 # a different SHA is passed, forcing a re-clone instead of using stale cached layers
 # Writing SHA to a file ensures Docker cache key includes the actual value
 RUN echo "${UPSTREAM_SHA:-unknown}" > /tmp/upstream-sha && \
-    rm -rf /opt/hermes && \
+    cd /tmp && rm -rf /opt/hermes && \
     git clone --depth 1 --single-branch --branch main \
         https://github.com/NousResearch/hermes-agent.git /opt/hermes
 
