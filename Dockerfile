@@ -32,7 +32,7 @@ RUN echo "${UPSTREAM_SHA:-unknown}" > /tmp/upstream-sha && \
 # Official upstream pattern: npm install + playwright + cache clean in one layer
 RUN --mount=type=cache,target=/root/.npm \
     npm install --prefer-offline --no-audit && \
-    npx playwright install --with-deps chromium --only-shell && \
+    npx @playwright/test install --with-deps chromium --only-shell && \
     npm cache clean --force
 
 # Parallel frontend builds
