@@ -1,5 +1,6 @@
 FROM ghcr.io/astral-sh/uv:0.11.6-python3.13-trixie AS uv_source
 FROM tianon/gosu:1.19-trixie AS gosu_source
+FROM node:22-bookworm-slim AS node_source
 FROM debian:13.4
 
 ARG UPSTREAM_SHA
@@ -14,13 +15,19 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     apt-get install -y --no-install-recommends \
         ca-certificates curl python3 ripgrep ffmpeg gcc g++ make cmake \
         python3-dev python3-venv libffi-dev procps git openssh-client \
-        docker-cli tini nodejs npm && \
+        docker-cli tini && \
     rm -rf /var/lib/apt/lists/*
 
 RUN useradd -u 10000 -m -d /opt/data hermes
 
 COPY --chmod=0755 --from=gosu_source /gosu /usr/local/bin/
 COPY --chmod=0755 --from=uv_source /usr/local/bin/uv /usr/local/bin/uvx /usr/local/bin/
+
+# Node 22 LTS — copy from official image instead of using Debian's EOL node 20.x
+COPY --chmod=0755 --from=node_source /usr/local/bin/node /usr/local/bin/
+COPY --from=node_source /usr/local/lib/node_modules/npm /usr/local/lib/node_modules/npm
+RUN ln -sf /usr/local/lib/node_modules/npm/bin/npm-cli.js /usr/local/bin/npm && \
+    ln -sf /usr/local/lib/node_modules/npm/bin/npx-cli.js /usr/local/bin/npx
 
 # ── Clone upstream (cache-busted by UPSTREAM_SHA) ──
 # Delete apps/desktop so @playwright/test is not installed via workspace,
