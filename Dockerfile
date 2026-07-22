@@ -38,7 +38,9 @@ RUN --mount=type=cache,target=/root/.npm \
 
 # Install Playwright browser shell (for browser tool support)
 RUN --mount=type=cache,target=/root/.npm \
+    npm install --no-save playwright && \
     npx playwright install --with-deps chromium --only-shell && \
+    npm uninstall --no-save playwright && \
     npm cache clean --force
 
 # Parallel frontend builds
